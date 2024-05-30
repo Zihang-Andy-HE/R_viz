@@ -1,0 +1,234 @@
+---
+title: "Zihang_data_cleaning"
+author: "2045"
+date: "`r format(Sys.time(), '%c')`" 
+output: 
+  pdf_document:
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval = FALSE, error = TRUE, warning=FALSE, results='hide')
+```
+
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+wnv<-read.csv("Practical7_data_cleaning/Week_7_WNV_mosquito_test_results.csv")#setwd("D:/桌面/ADS")
+head(wnv)
+str(wnv)#替换view总观格式
+summary(wnv)#每列的数据分布
+```
+
+
+## Data cleaning 1
+## NA
+```{r echo=TRUE}
+anyNA.data.frame(stroop_df)
+sum(is.na(pgp3[, i])) #计总数
+
+# 删除包含缺失值的行
+new_df <- na.omit(original_df)
+df %>% drop_na(c(2,3))  #删除第2和第3列为NA的行
+  
+# 删除包含缺失值的列
+new_df <- original_df[, colSums(is.na(original_df)) == 0]
+
+# 用0填充所有缺失值
+original_df[is.na(original_df)] <- 0
+
+# 用均值填充每列的缺失值
+original_df <- apply(original_df, 2, function(x) ifelse(is.na(x), mean(x, na.rm = TRUE), x))
+
+#this is to find the row,col of NA
+apply(is.na(diamond_sample), 2, which) 
+
+```
+
+## Duplicated
+```{r}
+anyDuplicated.data.frame(stroop_df)
+sum(duplicated(pgp3)) 
+pgp3[which(duplicated(pgp3)),] #包括第一次出现的进阶版见下
+
+# 删除基于所有列（某列）的重复行
+new_df <- original_df[!duplicated(original_df),]
+dim()#可观察前后变化
+
+# 添加一个列标识重复行
+original_df$is_duplicated <- duplicated(original_df)
+# 根据特定列标识重复行
+original_df$dup_in_column <- duplicated(original_df$column_name)
+
+################### 看一看所有重复行
+#duplciated() will only give you the duplicated rows,
+frw.idx = which(duplicated(data.noNA)) 
+# but not the original rows, so we need the next line to get the originals
+rvs.idx = which(duplicated(data.noNA, fromLast = TRUE))
+data.noNA[c(frw.idx, rvs.idx), ]#找到重复的两列
+
+# Let's check the respective samples
+pgp3[which(pgp3$SampleID %in% c(2,7,46,201)),]
+
+
+```
+
+
+## 列名、顺序、新列
+## Rename-rename() 
+## Rearrange-relocate() 
+## New column-mutate(name=method)
+
+```{r}
+wnv <- wnv %>%
+rename(YEAR = SEASON.YEAR) %>%  #rename
+relocate(1, 6) %>%              #relocate 第一列变成第六列 relocate(Name,Score,Age)
+mutate(TEST.DATE = as.POSIXct(wnv$TEST.DATE, 
+format = "%m/%d/%Y %H:%M:%S",
+tz="America/Chicago"))
+#class(wnv$TEST.DATE)检查class
+
+```
+
+
+## 整列的操作
+## Whole column modification
+## substitute-gsub() replacement = ""一般用于整列的删除
+## 一列变两列 seperate()
+## 一列只取点前面的 strsplit()/str_sub
+
+```{r}
+wnv$LOCATION[wnv$LOCATION == ""] <- NA
+# As you can see, each value is in brackets. We do not need them.
+wnv$LOCATION <- wnv$LOCATION %>%
+  #把括号替换(去除)
+gsub(pattern= "[()]", replacement = "", wnv$LOCATION, perl = T)
+
+# Now, we can separate our `LOCATION` column into two more columns
+wnv <- separate(data = wnv, col = LOCATION,
+into = c("LATITUDE", "LONGITUDE"),
+sep = ",", 
+remove = F, #不删除原列
+fill = "left", 
+convert = T) #转换数据类型为适当的类型
+
+Allprotein_down_pro <- strsplit(Allprotein_down_df$`dep_result$name`,"[.]")
+#'[['index
+Allprotein_down_pro <- sapply(Allprotein_down_pro, `[[`, 1)
+
+MDA231$Time<-str_sub(MDA231$Time,start = 6,end = 7)
+
+selected_dfgsea453All$Description <- gsub("^[^_]*_", "", #删除开头到下划线(包括下划线)
+                                          selected_dfgsea453All$Description)
+selected_dfgsea453All$Description <- gsub("_", " ", #"_"替换为" "
+                                          selected_dfgsea453All$Description)
+
+```
+
+
+## 排序专题
+```{r}
+#vector —— sort() order()
+geneListAll_468<-sort(geneListAll_468,decreasing = T)
+
+#dataframe —— arrange()
+df_sorted<-arrange(df,desc(Age),Salary) #年龄降序 工资升序
+
+#出现频次排序后筛选
+#测算frequency 排序 留下frequency > 1
+data %>% group_by(Genes) %>% summarize(frequency = n()) %>%
+  arrange(desc(frequency)) %>% filter(frequency > 1)
+```
+
+## wide type & long type
+长格式measurement (写在一列里)
+宽格式height weight age (写在列名) + value(列名下的数值)
+```{r}
+# Remove duplicated rows
+pgp3 <- pgp3 %>% 
+# Convert to the wide format 
+#key = 转换的列名; value = 列名下的数值
+spread(key = measured, value = value)
+
+#Convert to the long format
+#把3:ncol(df)收进key列中
+gather(data=df, key = "Group", value = "Cases", 3:ncol(df)) 
+
+
+
+```
+
+##各种join
+left_join（或简写为%left%）：保留左侧数据框的所有行，即使在右侧数据框中没有匹配的键值。
+right_join（或简写为%right%）：保留右侧数据框的所有行，即使在左侧数据框中没有匹配的键值。
+```{r}
+##注意by标注列名
+geneset_Trans <- left_join(geneInterList, geneset_TOlist, by = c("V1" = "ENSP"))
+```
+
+
+
+## Plot
+```{r}
+# ggplot2----大量分组!!!
+wnv_plot <- ggplot(data = drop_na(wnv)) + #drop_na画图自动跳过(不损失行列其他信息)
+  egg::theme_article()      #经典白色背景  或者ggbupr::heme_pubr()
+
+# By Year
+wnv_plot +
+  geom_boxplot(mapping = aes(x = as.factor(YEAR),
+                             y = NUMBER.OF.MOSQUITOES))
+
+# By Latitude
+wnv_plot +
+  geom_boxplot(mapping = aes(x = round(LATITUDE, 3),#处理后分组
+                             y = NUMBER.OF.MOSQUITOES,
+                             group = round(LATITUDE, 3)), #连续的需要分组
+               position = "identity", #boxplot和dot位置一样
+               outlier.shape = NA) + #不显示 outliers = mean +- 3sd
+  scale_x_continuous()
+
+##小提琴图
+ggplot(volcano_data,aes(mean_diff, -log10(pvalue)))+
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "#999999")+
+  geom_vline(xintercept = c(-0.02,0.02), linetype = "dashed", color = "#999999")+
+  annotate("text", x = 0.2, y = -log10(0.05)-0.18, label = "p-value = 0.05", vjust = 1, hjust = 1)+
+  geom_hline(yintercept = -log10(0.00005), linetype = "dashed", color = "#999999")+
+  annotate("text", x = 0.2, y = -log10(0.00005)-0.18, label = "p-value < 2.2e-16", vjust = 1, hjust = 1)+
+  geom_point(aes(color = change),
+             size = 1, 
+             alpha = 0.5,
+             key_glyph="point") +
+  theme_bw(base_size = 12)+
+  ggsci::scale_color_jama() +
+  theme(panel.grid = element_blank(),
+        legend.position = 'right',
+        plot.title = element_text(hjust = 0.5)) +
+  geom_text_repel(data = filter(top20sorted_volcano_data, abs(mean_diff) > 0 & pvalue < 0.05),
+                  max.overlaps = getOption("ggrepel.max.overlaps", default = 20),
+                  aes(label = GeneTarget, 
+                      color = change),
+                  size = 2.5,show.legend = FALSE) +
+  xlab("Mean difference")+
+  ylab("-Log10 p-value")+
+  labs(title = "Volcano Plot of Permutation Test",
+       color = "Change Type")
+```
+
+
+## Summarize Experiment Object
+## Filtration/ Normalization/ Imputation/ Differential/ Visulization
+```{r}
+#找符合条件的列名
+sample_columns<- grep("_01|_02|_03", colnames(data_unique))
+
+#samples(label)分成 condition (MDA231) 和replicate(01,02,03)
+label <- colnames(data_unique)[sample_columns]
+condition <- str_sub(label, 1, -4)
+replicate <- str_sub(label, -2, -1)
+experimental_design <- data.frame(label, condition, replicate)
+
+data_se<- make_se(data_unique, sample_columns, experimental_design)
+```
+

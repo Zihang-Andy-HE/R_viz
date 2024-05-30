@@ -1,0 +1,264 @@
+---
+title: "ADS2 Coding Challenge 1"
+author: "2045"
+date: "10th January 2024 1400-1700hrs"
+output:
+  pdf_document: 
+  latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+# 1. Benefits of swimming for long-distance runners
+
+## What would be a suitable statistical test for these data and why? Note you may need to tidy these data before deciding on which test to use. 
+
+Wilcoxon test should be used. Because although the running times in seconds before and after train are in normal distribution. But the 
+variances of two samples are not the same. So t-test cannot be used and wilcoxon test should be used.
+
+```{r, warning=FALSE}
+library(tidyverse)
+library(ggplot2)
+swim_df<-read.table("swimming.txt",header = T)
+swim_df$before_wholetime_inseconds<-swim_df$before_minutes*60+swim_df$before_seconds
+swim_df$after_wholetime_inseconds<-swim_df$after_minutes*60+swim_df$after_seconds
+
+shapiro.test(swim_df$before_wholetime_inseconds)#p-value = 0.179>0.05 normal distribution
+shapiro.test(swim_df$after_wholetime_inseconds)#p-value = 0.1799>0.05 normal distribution
+var.test(swim_df$before_wholetime_inseconds,swim_df$after_wholetime_inseconds) 
+#p-value = 0.0009053<0.05 variance not equal
+t <- t.test(length~ group, data = my_data, var.equal = F)
+##R语言的t检验默认方差不齐
+
+```
+
+
+## What are your null and alternative hypotheses?
+H0: There are no significant improvement on runners' times to complete a half-marathon before and after the same swimming training
+HA: Swimming training improved on runners' times to complete a half-marathon after completing the same swimming training
+
+
+## Is there a statistically significant improvement on runners' times after swimming? 
+
+Based on the result of wilcoxon test, p-value = 0.7176. There are no sufficient evidence to reject H0.
+There are no significant improvement on runners' times to complete a half-marathon before and after the same swimming training
+
+```{r}
+#If improve, before spend more time
+wilcox.test(swim_df$before_wholetime_inseconds,swim_df$after_wholetime_inseconds,
+            alternative = "greater")
+t.test(swim_df$before_wholetime_inseconds,swim_df$after_wholetime_inseconds,paired=T,
+            alternative = "greater")
+
+```
+
+
+\newpage
+
+
+
+# 2. Number of emergency room admissions
+
+## Import the dataset and plot the data in a useful way.
+```{r}
+hos_df<-read.csv("D:/桌面/ADS/hospital_admissions.csv",header = T)
+head(hos_df)
+
+hos_forplot<-hos_df
+hos_forplot$hour<-as.factor(hos_df$hour)
+hos_forplot$weekday<-as.factor(hos_df$weekday)
+hos_forplot<-arrange(hos_forplot,hour,weekday)
+ggplot(hos_forplot, aes(x=hour, y=patients_per_hour,fill=weekday)) +
+  theme_classic()+
+    geom_boxplot(width=0.5, color="black", alpha=0.5) +
+  scale_fill_manual(values = c("#B0E2FF","#FFB5C5"))+
+    ylab("Patients per hour")+
+  xlab("Hour of the day (p.m.)")
+
+```
+## Boxplot
+```{r}
+Mon_rate<-hos_df[hos_df$weekday=="Monday",]$patients_per_hour
+Sun_rate<-hos_df[hos_df$weekday=="Sunday",]$patients_per_hour
+x_labels <- factor(c("Mon", "Sun"), levels = c("Mon", "Sun"))
+boxplot(Mon_rate,Sun_rate,notch=T,ylab="patients per day", xlab = "Day", names = x_labels) #notch凹槽 类violin
+```
+
+
+
+## Cumulative proportion
+```{r}
+Mon_rate<-hos_df[hos_df$weekday=="Monday",]$patients_per_hour
+Sun_rate<-hos_df[hos_df$weekday=="Sunday",]$patients_per_hour
+x_labels <- factor(c("Mon", "Sun"), levels = c("Mon", "Sun"))
+
+#plot(x=sorted 病人数, y=位置向量按比例排序)
+#复制到console才能运行
+plot(sort(Mon_rate),1:length(Mon_rate)/length(Mon_rate),type="l",ylab="cumulative proportion",
+     xlab="patients per day")
+lines(sort(Sun_rate),1:length(Sun_rate)/length(Sun_rate),col='red')
+abline(h=0.5,lty="dashed")
+legend("bottomright",legend = c("Sunday","Monday"),fill = c("red","black"))
+```
+
+## Is there a difference in patient admission rates between Mondays and Sundays?
+
+There is a significant difference in patient admission rates between Mondays and Sundays.
+
+Because of the not normal distribution of data and not equal variance. Wilcoxon test was used. And the test should be paired. 
+H0: There are no significant difference in patient admission rates between Mondays and Sundays. 
+HA: There are significant difference in patient admission rates between Mondays and Sundays.
+
+According to wilcoxon test, p-value < 2.2e-16. There are sufficient evidence to reject H0.
+Thus, there is a significant difference in patient admission rates between Mondays and Sundays.
+```{r}
+Mon_rate<-hos_df[hos_df$weekday=="Monday",]$patients_per_hour
+Sun_rate<-hos_df[hos_df$weekday=="Sunday",]$patients_per_hour
+
+shapiro.test(Mon_rate)#p-value = 6.407e-08<0.05 not normal distribution
+shapiro.test(Sun_rate)#p-value = 6.617e-11<0.05 not normal distribution
+var.test(Mon_rate,Sun_rate)
+#p-value = 0.03259<0.05 variance not equal
+cor.test(Mon_rate,Sun_rate,method = "spearman")
+
+wilcox.test(Mon_rate,Sun_rate,
+            alternative = "two.sided",paired = T)
+#p-value < 2.2e-16 
+```
+## Simulation method
+```{r}
+random_sum<-c(Mon_rate,Sun_rate)
+```
+
+
+
+## Based on your findings, what advice would you give Dr. Horsey?
+When she plan staff schedules, she can arrange more staffs in the hospital’s
+emergency room on Monday
+compared with Sunday to handle potentially greater number of people admitted.
+
+\newpage
+
+
+
+# 3. Spinal cord injury and novel biomaterials
+
+## Import, arrange the data (merge both pieces of data and make the data possible to analyse), and make it suitable for analysis, e.g. the values. You should perform all the manipulations in R and provide the code.
+```{r}
+#import
+SCI_before_df<-read.csv("SCI_before.csv",header = T)
+SCI_after_df<-read.csv("SCI_after.csv",header = T)
+str(SCI_after_df)
+#arrange
+SCI_before_df<-arrange(SCI_before_df,patient_ID)
+SCI_after_df<-arrange(SCI_after_df,patient_ID)
+#clean the duplicated
+SCI_before_df_nodup <- SCI_before_df[!duplicated(SCI_before_df),]
+SCI_after_df_nodup <- SCI_after_df[!duplicated(SCI_after_df),] 
+
+#change the AIS scale to value 
+SCI_before_df_nodup$AIS_before_value[SCI_before_df_nodup$AIS_before == 'A']<- 1
+SCI_before_df_nodup$AIS_before_value[SCI_before_df_nodup$AIS_before == 'B']<- 2
+SCI_before_df_nodup$AIS_before_value[SCI_before_df_nodup$AIS_before == 'C']<- 3
+SCI_before_df_nodup$AIS_before_value[SCI_before_df_nodup$AIS_before == 'D']<- 4
+SCI_before_df_nodup$AIS_before_value[SCI_before_df_nodup$AIS_before == 'E']<- 5
+anyNA(SCI_before_df_nodup)
+
+SCI_after_df_nodup$AIS_after_value[SCI_after_df_nodup$AIS_after == 'A']<- 1
+SCI_after_df_nodup$AIS_after_value[SCI_after_df_nodup$AIS_after == 'B']<- 2
+SCI_after_df_nodup$AIS_after_value[SCI_after_df_nodup$AIS_after == 'C']<- 3
+SCI_after_df_nodup$AIS_after_value[SCI_after_df_nodup$AIS_after == 'D']<- 4
+SCI_after_df_nodup$AIS_after_value[SCI_after_df_nodup$AIS_after == 'E']<- 5
+anyNA(SCI_after_df_nodup)
+#merge
+SCI_all_df<-merge(SCI_before_df_nodup,SCI_after_df_nodup,by="patient_ID")
+```
+
+## Check your data carefully. Identify features of the data and discuss your conclusions. Make illustrative plots.
+21 out of 30 AIS scales show no difference
+8 out of 30 AIS scales become heathier
+Only one out of 30 AIS scales become worse
+
+Therefore, for patients treated with novel biomaterial for 15-18 months, majority of patients (21 out of 30) didn't show change in AIS scale, 
+while some become heathier (8 out of 30) and only one patient show worse condition .
+
+
+```{r}
+
+SCI_before_df_forplot<-SCI_before_df_nodup
+SCI_before_df_forplot$Group<-"SCI_before"
+colnames(SCI_before_df_forplot)<-c("patient_ID","AIS_scale","AIS_value","Group")
+
+SCI_after_df_forplot<-SCI_after_df_nodup
+SCI_after_df_forplot$Group<-"SCI_after"
+colnames(SCI_after_df_forplot)<-c("patient_ID","AIS_scale","AIS_value","Group")
+
+SCI_all_df_forplot<-rbind(SCI_before_df_forplot,SCI_after_df_forplot)
+head(SCI_all_df_forplot)
+
+##改变group为factor类型，levels调整顺序
+SCI_all_df_forplot$Group <- factor(SCI_all_df_forplot$Group, levels = c("SCI_before", "SCI_after"))
+
+ggplot(SCI_all_df_forplot, aes(x=Group, y=AIS_value,fill=Group)) +
+  theme_classic()+
+    geom_boxplot(width=0.5, color="black", alpha=0.5) +
+  scale_fill_manual(values = c("#B0E2FF","#FFB5C5"))+
+    ylab("AIS value")
+
+dim(SCI_all_df[SCI_all_df$AIS_before==SCI_all_df$AIS_after,]) #21 patients: no change
+dim(SCI_all_df[SCI_all_df$AIS_before_value<SCI_all_df$AIS_after_value,]) #8 patients: heathier
+dim(SCI_all_df[SCI_all_df$AIS_before_value>SCI_all_df$AIS_after_value,]) #1 patients: worse
+```
+
+
+## Formulate the correct statistical hypothesis to compare the groups, choose the appropriate statistical test, and check assumptions for this test. Explain your choice briefly. Then, perform this test and identify whether the difference between the experimental groups is statistically significant.
+There is a significant improvement in ASI scale of patients treated with novel biomaterial for 15-18 months.
+
+Because of the not normal distribution of AIS_before data and not equal variance. Wilcoxon test was used. And the test should be paired. 
+H0: There are no significant difference in ASI scale of patients before and after treated with novel biomaterial for 15-18 months. 
+HA: There are significant improvement in ASI scale of patients treated with novel biomaterial for 15-18 months.
+
+According to wilcoxon test, p-value = 0.01229 <0.05. There are sufficient evidence to reject H0.
+Thus, there is a significant improvement in ASI scale of patients treated with novel biomaterial for 15-18 months.
+
+```{r,warning=FALSE}
+AIS_after<-SCI_after_df_nodup$AIS_after_value
+AIS_before<-SCI_before_df_nodup$AIS_before_value
+shapiro.test(AIS_after)#p-value = 0.65316>0.05 normal distribution
+shapiro.test(AIS_before)#p-value = 1.732e-09<0.05 not normal distribution
+shapiro.test(AIS_after-AIS_before) ####Paired更好
+var.test(AIS_after,AIS_before)
+#p-value = 0.0007051<0.05 variance not equal
+
+wilcox.test(AIS_after,AIS_before,
+            alternative = "greater",paired = T)
+#p-value = 0.01229 <0.05
+```
+
+## Discuss the results you got. What did you obtain? Are there any flaws in the experimental design and what would you suggest to your colleagues? Support your statements with the appropriate statistics and/or effect size estimates.
+```{r}
+#Effect_size 0.5030487 sample medium effect
+(mean(AIS_after)-mean(AIS_before))/sd(cbind(AIS_before,AIS_after)) #unpaired
+
+(mean(AIS_after)-mean(AIS_before))/sd(c(AIS_before-AIS_after)) #paired 用difference
+
+```
+
+Result: 
+There is a significant improvement in ASI scale of patients treated with novel biomaterial for 15-18 months. 
+For patients treated with novel biomaterial for 15-18 months, majority of patients (21 out of 30) didn't show change in AIS scale, 
+while some become heathier (8 out of 30) and only one patient show worse condition .
+
+Flaws:
+1. They did not use control group using placebo material or didn't do operations
+2. Most ASI scale before treatment is A (the worst), which makes it hard to assess worse condition after treatment.
+3. The sample size is only 30, which is not very big.
+
+Suggestions:
+1. Set control group using placebo material or didn't do operations to better show the effect of the novel biomaterial.
+2. Use more accurate level of assessment rather than ASI scale, which allows the detection of worse condition after treatment. 
+3. They can recuit more person to test the novel biomaterial.
+
