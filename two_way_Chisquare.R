@@ -50,3 +50,32 @@ rownames(expected_counts) <- c("female", "male")
 # 卡方拟合优度检验
 chisq.test(table_genotype, p = expected_counts,correct=FALSE)
 
+# 加载pwr包
+library(pwr)
+# 假设我们进行t检验，效应大小为0.5，显著性水平为0.05，双侧检验
+# power_result <- pwr.t.test(n = 你的样本大小, 
+#                            d = 你的效应大小, 
+#                            sig.level = 0.05, 
+#                            type = "two.sample", 
+#                            alternative = "two.sided")
+
+# 输出功效水平
+power_result$power
+
+
+
+###############power=0.8时
+
+# 设定参数
+k <- 3 # 组数
+n <- 12.19326 # 每组样本量，根据前述结果得到
+f <- 0.537 # 效应大小
+sig.level <- 0.05 # 显著水平
+
+# 进行功效分析
+power <- pwr.anova.test(k = k, n = n, f = f, sig.level = sig.level)
+
+# 打印结果
+print(power)
+
+
