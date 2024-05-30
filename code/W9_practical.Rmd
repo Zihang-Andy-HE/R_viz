@@ -1,0 +1,241 @@
+---
+title: "2.9 supervised learning"
+author: "Zihang"
+date: "2024-04-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+
+
+```{r cars}
+library(readr)
+library(dplyr)
+
+mnist_raw <- read_csv("D:/桌面/ADS2/W9_Supervised_Unsupervised_learning/mnist_train.csv", col_names = FALSE)
+mnist_raw[1:10, 1:10]
+```
+```{r}
+library(tidyr)
+
+#一张图784个像素，一列一像素，一行一张图，转换出像素点label信息，xy坐标信息，instance样本索引，
+#pixel 像素索引，value像素值
+pixels_gathered <- mnist_raw %>%
+  head(10000) %>%    #取出前10000个样本
+  rename(label = X1) %>%      #X1重命名为label（手写字母的实际数值）
+  mutate(instance = row_number()) %>%       #新列instance包含row_num行号 即样本（图）序号
+  gather(pixel, value, -label, -instance) %>%    #宽格式改长格式 value代表深浅
+  tidyr::extract(pixel, "pixel", "(\\d+)", convert = TRUE) %>% 
+  mutate(pixel = pixel - 2,
+         x = pixel %% 28,        #取余数
+         y = 28 - pixel %/% 28)  #28-整除结果
+
+pixels_gathered
+```
+```{r}
+library(ggplot2)
+theme_set(theme_light())
+
+#坐标信息加value表示深浅
+pixels_gathered %>%
+  filter(instance <= 12) %>%
+  ggplot(aes(x, y, fill = value)) +
+  geom_tile() +
+  facet_wrap(~ instance + label)
+
+```
+
+```{r}
+ggplot(pixels_gathered, aes(value)) +
+  geom_histogram()
+```
+
+```{r}
+#每一种手写数字(label)不同坐标的mean value
+pixel_summary <- pixels_gathered %>%
+  group_by(x, y, label) %>%
+  summarize(mean_value = mean(value)) %>%
+  ungroup()
+
+pixel_summary
+```
+
+```{r}
+library(ggplot2)
+
+pixel_summary %>%
+  ggplot(aes(x, y, fill = mean_value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "white", high = "black", mid = "gray", midpoint = 127.5) +
+  facet_wrap(~ label, nrow = 2) +
+  labs(title = "Average value of each pixel in 10 MNIST digits",
+       fill = "Average value") +
+  theme_void()
+```
+
+
+Atypical instances
+
+```{r}
+#7840000个原始像素(gathered)+该数字的平均像素(summary)
+pixels_joined <- pixels_gathered %>%
+  inner_join(pixel_summary, by = c("label", "x", "y"))
+
+#每种label和样本instance(10000个)按照像素点算差值 =>稀疏矩阵?
+image_distances <- pixels_joined %>%
+  group_by(label, instance) %>%
+  summarize(euclidean_distance = sqrt(mean((value - mean_value) ^ 2)))
+
+image_distances
+```
+
+```{r}
+#1的value和mean value差距最小（统一性好）
+ggplot(image_distances, aes(factor(label), euclidean_distance)) +
+  geom_boxplot() +
+  labs(x = "Digit",
+       y = "Euclidean distance to the digit centroid")
+```
+
+
+
+```{r}
+#每种数字和标准mean差的最远的代码
+worst_instances <- image_distances %>%
+  top_n(6, euclidean_distance) %>%
+  mutate(number = rank(-euclidean_distance))
+
+pixels_gathered %>%
+  inner_join(worst_instances, by = c("label", "instance")) %>%
+  ggplot(aes(x, y, fill = value)) +
+  geom_tile(show.legend = FALSE) +
+  scale_fill_gradient2(low = "white", high = "black", mid = "gray", midpoint = 127.5) +
+  facet_grid(label ~ number) +
+  labs(title = "Least typical digits",
+       subtitle = "The 6 digits within each label that had the greatest distance to the centroid") +
+  theme_void() +
+  theme(strip.text = element_blank())
+```
+
+
+```{r}
+#比较0-9 centroid的坐标像素差异
+digit_differences <- crossing(compare1 = 0:9, compare2 = 0:9) %>%
+  filter(compare1 != compare2) %>%
+  mutate(negative = compare1, positive = compare2) %>%
+  #positive 和 negative 两列合并为一列 label，并创建了一个新列 class，用于表示正样本和负样本的来源。
+  #gather(df,key,value,A,B,C...)
+  gather(class, label, positive, negative) %>%
+  inner_join(pixel_summary, by = "label") %>% #按照label添加像素点及其mean value
+  select(-label) %>%
+  #将 class 列中的值转换为新的列，并填充对应的像素平均值
+  #spread(df,key,value)
+  spread(class, mean_value)
+
+ggplot(digit_differences, aes(x, y, fill = positive - negative)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = .5) +
+  facet_grid(compare2 ~ compare1) +
+  theme_void() +
+  labs(title = "Pixels that distinguish pairs of MNIST images",
+       subtitle = "Red means the pixel is darker for that row's digit, and blue means the pixel is darker for that column's digit.")
+```
+
+Based on the features you selected, create and compute a features dataframe, where rows are examples and variables/columns are different features (e.g. 56 of them).
+Here is an example code to compute features based on row & column averages 
+
+
+```{r}
+#像素28*28转换成28+28=56的特征向量
+features = data.frame(label = mnist_raw$X1[1:1000])#label=0-9 来自1000个样本
+for (i in 1:56)#加新列fi(i=1:56)每列都是1000个0
+ features = cbind(features, fi = c(1:1000)*0)
+###############以上为df初始化 label=1:1000，56个特征列都是1000个0
+for (i in 1:28)
+  for (j in 1:1000)#1000行样本信息(j)
+ # 样本j，计算28个y坐标均值
+ { features[j,i+1] = mean(pixels_gathered$value[pixels_gathered$instance==j & pixels_gathered$y==i]);
+ # 样本j，计算28个x坐标均值
+ features[j,i+29] = mean(pixels_gathered$value[pixels_gathered$instance==j & pixels_gathered$x==i-1]);
+  }
+saveRDS(features,"D:/桌面/ADS2/W9_Supervised_Unsupervised_learning/features.RDS")
+#features<-readRDS("D:/桌面/ADS2/W9_Supervised_Unsupervised_learning/features.RDS")
+```
+
+
+
+
+```{r}
+library(nnet)
+rows <- sample(1:1000, 700)
+
+train_labels <- features[rows, 1]
+valid_labels <- features[-rows, 1]
+train_data <- features[rows, -1]
+valid_data <- features[-rows, -1]
+# normalizing the data
+train_data = train_data/255
+valid_data = valid_data/255
+#分类标签转换为独热编码（one-hot encoding）分类问题常见
+train_labels_matrix = class.ind(train_labels)
+
+head(train_labels)
+head(train_labels_matrix)
+
+#训练神经网络 4个隐藏层 softmax概率型激活函数 默认迭代100次
+nn = nnet(train_data, train_labels_matrix, size = 4, softmax = TRUE)
+
+#用模型分类 训练集与验证集
+pred_train = predict(nn, train_data, type="class")
+pred_valid = predict(nn, valid_data, type="class")
+
+#计算分类准确性
+mean(pred_train == train_labels)
+mean(pred_valid == valid_labels)
+
+#训练集表现比验证集好存在过拟合
+```
+1.尝试不同隐藏层数量对模型表现的影响
+2.观察bias-varians变化 理论上复杂模型偏差bias小，variance大
+```{r}
+# initialising vectors for storing training and validation performance
+trainerrs = 1:12
+validerrs = 1:12
+
+# training the networks for each number of hidden layer neurons
+for (i in 1:12)
+{ nn = nnet(train_data, train_labels_matrix, size = i, softmax = TRUE)
+ pred_train = predict(nn, train_data, type="class")
+ pred_valid = predict(nn, valid_data, type="class")
+ trainerrs[i] = mean(pred_train == train_labels)
+ validerrs[i] = mean(pred_valid == valid_labels)
+}
+```
+观察如上结果：
+It’s evident that in none of the cases the network has fully converged
+errors keep decreasing notably between the 90th and 100th iterations:
+表明模型在这些迭代中仍在学习，参数仍在发生变化，因此尚未达到完全收敛的状态
+几种可能的解释：
+
+1.学习率（Learning Rate）设置过高，导致模型无法在训练过程中收敛到稳定状态。
+2.网络的规模太大，训练数据不足以使其完全收敛。
+3.训练迭代次数不足，模型仍在学习过程中
+
+
+The bias-variance dilemma plot 
+Feature plotting用最简单的向量+plot()+line()
+```{r}
+plot(trainerrs, xlab='Number of hidden layer neurons', ylab='Classification 
+performance')
+lines(validerrs)
+legend ("bottomright", c("training set", "validation set"), pch="o-")
+title("Performance of a default neural network with 100 iterations for digit 
+classification")
+```
+
+

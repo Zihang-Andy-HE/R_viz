@@ -1,0 +1,56 @@
+---
+title: "W13_practical cluster"
+author: "Zihang"
+date: "2024-05-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+data = read.csv("D:/桌面/ADS2/W13_cluster_machine_learning/guests.csv", stringsAsFactors = T)
+
+head(data)
+kmeans_cluster <- kmeans(data[, 2:3], centers=4) 
+
+plot(data[, 2:3], col=kmeans_cluster$cluster,pch = 19)+ # 对聚类结果上色
+text(data$age_norm, data$hours_norm, labels = data$name, cex = 0.7, pos = 3)
+
+```
+
+## Hierarchical clustering层次聚类
+
+```{r}
+# cluster the data
+h_cluster <- hclust(dist(data[, 2:3]))
+# plot the data
+plot(h_cluster, xlab = "Guest names", labels = data$names) 
+```
+
+
+## k means
+
+```{r}
+library(RColorBrewer)
+colours <- brewer.pal(4, "Dark2")
+
+# Now make a list of clusters
+#保存cluster信息
+data$cluster <- NA
+#保存距离质心信息
+data$distance_1 <- NA
+data$distance_2 <- NA
+data$distance_3 <- NA
+data$distance_4 <- NA
+data$colour <- "black"
+
+```
+
