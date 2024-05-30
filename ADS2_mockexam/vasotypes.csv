@@ -1,0 +1,167 @@
+﻿Cell,Protocol,Fit Type
+n200706,control,All
+n200706-2,control,HAP
+n200706-3,control,All
+n200706-4,control,DAP
+n200706-5,control,DAP
+n200708,control,DAP
+n200708-4,control,All
+n200709-2,control,All
+n200709-3,control,All
+n200709-4,control,All
+n200709-5,control,All
+n200713b,control,All
+n200713-3,control,DAP
+n200714a,control,All
+n200714-2,control,All
+n200714-3,control,All
+n200715,control,HAP
+n200715-2,control,DAP
+n200715-3,control,All
+n200715-4,control,All
+n200819,control,All
+n200819-2,control,All
+n200819-3b,control,AHP
+n200819-4a,control,HAP
+n200819-5,control,All
+n200826a,control,All
+n200826b,control,All
+n200826-2,control,All
+n200826-3,control,All
+n200826-5,control,All
+n200826-6,control,DAP
+n200902,control,DAP
+n200902-2,control,DAP
+n200902-3,control,DAP
+n200903,control,All
+n200903-5,control,DAP
+n200909,control,AHP
+n200909-2,control,AHP
+n200909-3,control,All
+n200909-4,control,AHP
+n200909-5,control,All
+n200909-6,control,HAP
+n200916,control,All
+n200916-2,control,All
+n200924,control,All
+n200924-2,control,All
+n200924-3,control,DAP
+n200924-4,control,DAP
+n200924-6,control,HAP
+n201007,control,All
+n201007-2,control,DAP
+n201007-3,control,All
+n201007-4a,control,All
+n201007-4b,control,DAP
+n201007-5,control,All
+n201014,control,DAP
+n201014-4,control,HAP
+n201014-5,control,HAP
+n201027-2a,control,All
+n201027-3,control,DAP
+n201027-4,control,DAP
+n201027-7,control,DAP
+n201029,control,All
+n201029-2,control,All
+n201029-3a,control,DAP
+n201029-3b,control,HAP
+n201029-5,control,All
+n201104-2,control,All
+n201104-3,control,All
+n201104-4,control,All
+n201111-2,control,DAP
+n201111-3,control,All
+n201111-4,control,DAP
+n201111-6,control,DAP
+n201111-7,control,DAP
+n201118,control,AHP
+n201118-3,control,HAP
+n201125a,control,DAP
+n201125b,control,All
+n201125-2,control,All
+n201125-3,control,All
+n201125-4,control,All
+n201209,control,AHP
+n210211,control,AHP
+n210211-2,control,AHP
+n210211-3,control,All
+n200805-6,salt loaded,AHP
+n200806-2,salt loaded,HAP
+n200806-6a,salt loaded,All
+n200825,salt loaded,AHP
+n200825-6,salt loaded,AHP
+n200901-2a,salt loaded,DAP
+n200901-4,salt loaded,DAP
+n200901-5a,salt loaded,DAP
+n200901-5b,salt loaded,HAP
+n200901-5c,salt loaded,DAP
+n200901-6a,salt loaded,AHP
+n200901-6b,salt loaded,AHP
+n200901-8,salt loaded,DAP
+n200908-2,salt loaded,DAP
+n200908-3a,salt loaded,AHP
+n200922-2,salt loaded,HAP
+n200922-4,salt loaded,DAP
+n200923-6,salt loaded,DAP
+n200929a,salt loaded,AHP
+n200929-4,salt loaded,AHP
+n200929-6a,salt loaded,All
+n200929-6b,salt loaded,HAP
+n200929-7b,salt loaded,DAP
+n201006,salt loaded,All
+n201006-2,salt loaded,All
+n201013-4b,salt loaded,DAP
+n201103-2a,salt loaded,DAP
+n201103-3,salt loaded,DAP
+n201103-6,salt loaded,HAP
+n201103-7,salt loaded,HAP
+n201110,salt loaded,DAP
+n201110-3,salt loaded,AHP
+n201110-5,salt loaded,All
+n201117,salt loaded,All
+n201117-4,salt loaded,All
+n201124-3,salt loaded,DAP
+n201208,salt loaded,AHP
+n201208-2,salt loaded,AHP
+n201208-3,salt loaded,AHP
+n210119,salt loaded,DAP
+n210119-2a,salt loaded,All
+n210119-2b,salt loaded,HAP
+n210119-3,salt loaded,AHP
+n210202-2,salt loaded,DAP
+n210202-3,salt loaded,DAP
+n200805a,salt loaded,DAP
+n200805b,salt loaded,DAP
+n200805-2a,salt loaded,DAP
+n200806,salt loaded,HAP
+n200825-2,salt loaded,All
+n200825-3,salt loaded,AHP
+n200825-4,salt loaded,AHP
+n200825-5,salt loaded,HAP
+n200825-7,salt loaded,HAP
+n200901-3,salt loaded,HAP
+n200901-7,salt loaded,HAP
+n200908-5,salt loaded,AHP
+n200915,salt loaded,DAP
+n200922-3,salt loaded,AHP
+n200922-6,salt loaded,AHP
+n200922-7a,salt loaded,HAP
+n200922-7b,salt loaded,HAP
+n200922-8,salt loaded,HAP
+n200923-5,salt loaded,DAP
+n200929b,salt loaded,HAP
+n200929-2,salt loaded,DAP
+n201006-3,salt loaded,AHP
+n201006-7,salt loaded,HAP
+n201013-2a,salt loaded,DAP
+n201013-2b,salt loaded,AHP
+n201013-5a,salt loaded,HAP
+n201013-5b,salt loaded,HAP
+n201103,salt loaded,DAP
+n201103-4,salt loaded,AHP
+n201103-5,salt loaded,AHP
+n201124a,salt loaded,HAP
+n201124-2a,salt loaded,AHP
+n201124-2b,salt loaded,AHP
+n201201,salt loaded,HAP
+n201208-4,salt loaded,AHP

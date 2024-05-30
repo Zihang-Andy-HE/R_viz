@@ -1,0 +1,341 @@
+---
+title: "ADS_21"
+author: "2045"
+date: "`r format(Sys.time(), '%c')`" 
+output:
+  pdf_document:
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. Neural activity patterning and osmotic challenge
+
+## 1.1 Import and organise the data set.
+```{r,warning=FALSE}
+library(ggplot2)
+library(tidyverse)
+vaso_data<-read.csv("D:/桌面/ADS2_mockexam/vasotypes.csv")
+str(vaso_data)
+
+anyNA(vaso_data)
+anyDuplicated(vaso_data)
+```
+
+```{r}
+# Create a contingency table
+# 数据转换为所需格式
+formatted_vaso <- vaso_data %>%
+  # 只保留需要的列
+  select(Protocol, Fit.Type) %>%
+  # 按性别和基因型分组，并计数
+  group_by(Protocol, Fit.Type) %>%
+  summarize(count = n()) %>%
+  # 将数据转换为宽格式
+  spread(key = Fit.Type, value = count)
+
+formatted_vaso
+
+```
+
+
+## 1.2 Including Plots
+
+You can also embed plots, for example:
+
+```{r}
+# Plotting the data
+ggplot(vaso_data, aes(x = Fit.Type, fill = Protocol)) +
+  geom_bar(position = "stack") +
+  labs(title = "Fit model Counts",
+       x = "Fit model",
+       y = "Count",
+       fill = "Protocol") +
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r}
+formatted_vaso_long <- formatted_vaso %>%
+  pivot_longer(cols = -Protocol, names_to = "Type", values_to = "Count")
+
+# 绘制 control 条件下的饼状图
+control_data <- formatted_vaso_long %>% filter(Protocol == "control")
+
+ggplot(control_data, aes(x = "", y = Count, fill = Type)) +
+  geom_bar(stat = "identity",width = 1) +
+  coord_polar("y") +
+  labs(title = "Control Protocol", fill = "Type") +
+  theme_void()+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+# 绘制 salt loaded 条件下的饼状图
+salt_loaded_data <- formatted_vaso_long %>% filter(Protocol == "salt loaded")
+
+ggplot(salt_loaded_data, aes(x = "", y = Count, fill = Type)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y") +
+  labs(title = "Salt Loaded Protocol", fill = "Type") +
+  theme_void()+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## 1.3 Choose, justify, state the statistical hypotheses, and carry out an appropriate test.
+We'll use a chi-squared test to determine if there is a significant difference in the distribution of best fit models between control and salt-loaded neurons.
+
+Hypotheses:
+
+Null Hypothesis (H0): There is no difference in the distribution of best fit models between control and salt-loaded neurons.
+Alternative Hypothesis (H1): There is a difference in the distribution of best fit models between control and salt-loaded neurons.
+
+```{r}
+# Create a contingency table
+contingency_table <- table(vaso_data$Protocol, vaso_data$Fit.Type)
+
+# Perform the chi-squared test
+chi_squared_test <- chisq.test(contingency_table)
+
+# Display the results
+chi_squared_test
+
+```
+## 1.4 Discuss the result, have the neurons’ intrinsic properties changed? Are there any problems or limitations with the current study?
+Chi-squared statistic: 37.41
+P-value: 3.768e-08
+There is a significant difference in the distribution of best fit models between control and salt-loaded neurons.
+This suggests that the osmotic challenge affects the spiking properties of the neurons.
+Discussion
+ 
+Limitations: Potential limitations include the sample size and variability in experimental conditions. Further studies could include larger sample sizes and more controlled conditions to verify these findings.
+2.模型可解释性The interpretation of the model fitting results requires careful consideration. Each combination of afterpotentials (HAP, DAP, AHP) may represent different aspects of neuronal physiology, and their relative contributions to the observed spiking patterns need to be interpreted cautiously.
+3.长时间（多浓度梯度的影响）维度The study's focus on a prolonged osmotic challenge raises questions about the long-term effects of salt loading on neuronal activity. It's crucial to consider whether any observed changes are transient or persist over time.
+3.动物状态，人的状态年龄病史等Covariates and Confounding Factors: It's essential to consider whether any covariates or confounding factors might influence the results. Factors such as the age of the animals, their health status, or other experimental conditions could affect the neurons' spiking properties independently of the osmotic challenge.
+
+
+EXAM1: 偏向实验设计covariates或者数据实验发现的异常 1. there is no control group (it would
+not be possible to add sham-operated persons anyway); 2. the information about the patient is incomplete as
+it does not include details about their clinical picture and possible important clinical covariates (age, the
+location of the trauma, their detailed case description upon admission, etc). You may comment about the
+need to add other clinical covariates to predict the clinical outcome. You may mention that the condition of
+several persons not only did not improve but even deteriorated further, and this issue must be addressed. 
+
+## 2. Myoinositol and gestational diabetes mellitus
+Your colleagues wonder whether the suggested treatments improve insulin resistance and prevent excessive
+weight gain in pregnant women. You may compare the difference in the analyzed characteristics between
+both time points.
+
+## 2.1 Import the data and “clean” it.
+```{r}
+# Import data from all sites
+files <- list.files(path = "D:/桌面/ADS2_mockexam/", pattern = "site_.*.csv", 
+                    full.names = TRUE)
+data_list <- lapply(files, read.csv)#应用函数
+
+# Combine data into one dataframe
+combined_data <- bind_rows(data_list)
+
+
+anyNA(combined_data)
+str(combined_data)
+
+```
+
+## 2.2 Choose the appropriate method of statistical analysis, check assumptions for this analysis, and explain your choice briefly.
+Appropriate Statistical Test:
+Use ANOVA to compare the means across multiple groups.
+
+Hypothesis Formulation:
+Null Hypothesis: There is no difference in insulin resistance among the different treatment groups.
+Alternative Hypothesis: There is a significant difference in insulin resistance among the different treatment groups.
+```{r}
+# Convert treatment to factor
+combined_data$Patients <- as.factor(combined_data$Patients)
+
+# Perform ANOVA for insulin-free days
+anova_insulin <- aov(Insulin_free_days ~ Patients, data = combined_data)
+summary(anova_insulin)
+```
+
+```{r}
+par(mfrow = c(1, 2)) # combine plots
+# 1. QQ-plot
+plot(anova_insulin, which = 2)
+# 2. Homogeneity of variances
+plot(anova_insulin, which = 3)
+```
+The left QQ plot shows the residuals are close to normality, since the dots do not offset the dashed line.
+But the right plot shows variances not homogeneous, since the red line indicating the mean of residuals is not horizontal.
+
+Null Hypothesis: There is no difference in weight gain among the different treatment groups.
+Alternative Hypothesis: There is a significant difference in weight gain among the different treatment groups.
+```{r}
+# Perform ANOVA for weight change
+combined_data <- combined_data %>%
+  mutate(weight_change = Weight_delivery - Weight_beginning)
+
+anova_weight <- aov(weight_change ~ Patients, data = combined_data)
+summary(anova_weight)
+```
+
+The normality of residuals and the homogeneity of variances are tested
+```{r}
+par(mfrow = c(1, 2)) # combine plots
+# 1. QQ-plot
+plot(anova_weight, which = 2)
+# 2. Homogeneity of variances
+plot(anova_weight, which = 3)
+```
+The left QQ plot shows the residuals are close to normality, since the dots do not offset the dashed line.
+But the right plot shows variances not homogeneous, since the red line indicating the mean of residuals is not horizontal.
+
+## 2.3 Formulate the correct statistical hypotheses, conduct the analysis, identify the effect of treatment, and show which factor has a higher effect on the tested characteristics. Plot your data.
+We find that the residuals are normal, while the variances are not equal in both insulin resistance and weight gain datasets. So the Welch'one way ANOVA should be used.
+
+For insulin resistance:
+Null Hypothesis: There is no difference in insulin resistance among the different treatment groups.
+Alternative Hypothesis: There is a significant difference in insulin resistance among the different treatment groups.
+
+For weight gain:
+Null Hypothesis: There is no difference in weight gain among the different treatment groups.
+Alternative Hypothesis: There is a significant difference in weight gain among the different treatment groups.
+
+
+
+```{r}
+oneway.test(Insulin_free_days ~ Patients,data = combined_data,var.equal = F)
+
+ggplot(combined_data, aes(x = Patients, y = Insulin_free_days)) +
+  geom_boxplot() +
+  labs(title = "Insulin-Free Days by Treatment Group", x = "Treatment Group", 
+       y = "Insulin-Free Days")+
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+The Welch's ANOVA shows p-value = 0.09726,  which indicates no difference in insulin resistance among the different treatment groups. And the Post-hoc test is not required.
+
+```{r}
+oneway.test(weight_change ~ Patients,data = combined_data,var.equal = F)
+
+ggplot(combined_data, aes(x = Patients, y = weight_change)) +
+  geom_boxplot() +
+  labs(title = "Weight Change by Treatment Group", x = "Treatment Group", 
+       y = "Weight Change")+
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+The Welch's ANOVA shows p-value = 5.525e-05,  which indicates significant difference in weight gain among the different treatment groups. And the Post-hoc test (Tukey HSD tests) is required.
+
+```{r,warning=FALSE}
+library(multcomp)
+post_test_weight <- glht(anova_weight,linfct = mcp(Patients = "Tukey"))
+summary(post_test_weight)
+```
+The Tukey HSD test shows p value <0.001 when comparing Myoinositol group with control and Chiroinositol group and p value =0.0464 < 0.05 when comparing Myo/Chiroinositol group with control. And considering the boxplots, this indicates inhibitory effect on weight gain of Myoinositol and Myo/Chiroinositol treatment. The Myoinositol treatment itself has the highest level of inhibitory effects on the weight gain.
+
+
+## 2.4 What could be done in the future to follow up on this study? Give some suggestions to the researchers.
+
+Additional measurements such as blood glucose levels and HbA1c to better understand the impact of treatments on gestational diabetes. More information about the patients like the ages can be further collected and researched.
+
+## 3. Classifying neuron types from electrophysiological recordings
+
+## 3.1 Import the original data and plot it in a useful format to show the original classifications (type)
+```{r}
+vmndata<-read.csv("D:/桌面/ADS2_mockexam/vmndata.csv")
+
+# Plot original data
+ggplot(vmndata, aes(x = hap1, y = hap2, color = as.factor(type))) +
+  geom_point() +
+  labs(title = "Original Classification of Neurons", x = "HAP1", y = "HAP2", 
+       color = "Neuron Type")+
+  theme_light()+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+## 3.2 Use clustering of the model fit data to make your own classification of the recordings (You are allowed to use the kmeans function in R)
+```{r}
+# Perform k-means clustering
+set.seed(123)
+kmeans_result <- kmeans(vmndata[, c("hap1", "hap2")], centers = 6)
+
+# Add cluster result to the data
+vmndata$cluster <- as.factor(kmeans_result$cluster)
+str(vmndata)
+```
+
+## 3.3 Plot the outcome of this clustering (e.g. by assigning colours by cluster).
+```{r}
+# Plot clustering result
+ggplot(vmndata, aes(x = hap1, y = hap2, color = cluster)) +
+  geom_point() +
+  labs(title = "K-means Clustering of Neurons", x = "HAP1", y = "HAP2", 
+       color = "Cluster")+
+  theme_light()+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# # cluster the data
+# h_cluster <- hclust(dist(data[, 2:3]))
+# # plot the data
+# plot(h_cluster, xlab = "Guest names", labels = data$names) 
+```
+
+
+## 3.4 Test the clustering using different subsets of the fit parameters. Describe in words how your clustering compares to the original classifications
+肘部法则（Elbow Method）:
+这是选择聚类数的一种常用方法。你需要对不同的聚类数（k）运行K均值聚类，然后绘制每个k的总内部平方和（Within-Cluster Sum of Squares, WCSS）。
+WCSS是簇内样本与簇中心距离的平方和，较小的WCSS值通常表示较好的聚类效果。
+WCSS is the sum of squares of the distance between the samples in the cluster and the cluster center, and a smaller WCSS value usually indicates a better clustering effect.
+选择WCSS下降速率骤减的点作为聚类数
+The cluster number is selected at the point where the WCSS decline rate decreases sharply
+
+
+```{r}
+
+# 创建数据矩阵
+data_matrix <- vmndata[, c("hap1", "hap2")]
+
+# 计算不同聚类数的WCSS结果
+wcss <- sapply(1:10, function(k) {
+  km <- kmeans(data_matrix, centers = k)
+  km$tot.withinss
+})
+
+# 绘制WCSS与聚类数的关系图
+plot(1:10, wcss, type = "b", xlab = "Number of clusters",
+     ylab = "WCSS", main = "Elbow Method")
+
+
+```
+```{r}
+drug_df<-read.csv("D:/桌面/ADS_provide/short/t1d_drug.csv")
+which(is.na(drug_df$Glucose))
+
+drug_df_clean<-drug_df[-c(which(is.na(drug_df$Glucose))-30,which(is.na(drug_df$Glucose))),]
+drug_df_clean$Measurement<-factor(drug_df_clean$Measurement,levels=c("Glucose_before","Glucose_after"))
+drug_df_clean$Treatment<-factor(drug_df_clean$Treatment,levels=c("Vehicle", "1 mg/ml", "5 mg/ml"))
+
+
+#library(ggplot2)
+# create plot using ggplot() and geom_boxplot() functions
+ggplot(drug_df_clean, aes(Treatment, Glucose, fill=Measurement)) +
+geom_boxplot()+
+# geom_point() is used to make points at data values
+geom_jitter(aes(y=Glucose),
+              size = 2, shape = 21,
+              color="black",
+              stroke = 0.15, show.legend = FALSE, 
+              position = position_jitterdodge(jitter.height=0.5,
+                                              jitter.width = 0.1,
+                                              dodge.width = 0.8))+
+  #geom_line(aes(group = ID), color = "black", alpha = 0.5) + 
+theme_classic()
+```
+

@@ -1,0 +1,43 @@
+---
+title: "ADS2 Mock Coding Challenge 2"
+date: "Semester 2, 2023-24"
+output: pdf_document
+---
+
+# Treatment for type 1 diabetes (T1D)
+
+Your team developed an insulinomimetic that can be used to substitute insulin in patients with T1D. You induced T1D in mice by injecting them with streptozotocin (this drug destroys pancreatic $\beta$-cells, which abrogates insulin production and leads to the loss of control over glucose metabolism). Subsequently, mice were injected with vehicle or this novel drug in 2 possible concentrations. Their blood glucose level (mM) was measured before the injection and 1 hour after.
+
+Answer the questions below and provide clear and reproducible code as well as your comments.
+```{r}
+drug_df<-read.csv("D:/×ÀÃæ/ADS_provide/short/t1d_drug.csv")
+which(is.na(drug_df$Glucose))
+
+drug_df_clean<-drug_df[-c(which(is.na(drug_df$Glucose))-30,which(is.na(drug_df$Glucose))),]
+drug_df_clean$Measurement<-factor(drug_df_clean$Measurement,levels=c("Glucose_before","Glucose_after"))
+drug_df_clean$Treatment<-factor(drug_df_clean$Treatment,levels=c("Vehicle", "1 mg/ml", "5 mg/ml"))
+
+
+#library(ggplot2)
+# create plot using ggplot() and geom_boxplot() functions
+ggplot(drug_df_clean, aes(Treatment, Glucose, fill=Measurement)) +
+geom_boxplot()+
+# geom_point() is used to make points at data values
+geom_jitter(aes(y=Glucose),
+              size = 2, shape = 21,
+              color="black",
+              stroke = 0.15, show.legend = FALSE, 
+              position = position_jitterdodge(jitter.height=0.5,
+                                              jitter.width = 0.1,
+                                              dodge.width = 0.8))+
+  #geom_line(aes(group = ID), color = "black", alpha = 0.5) + 
+theme_classic()
+```
+
+## Import, check, and organize the data appropriately. Treat data and reformat columns if needed.
+
+## Plot the data in a useful way.
+
+## Choose, justify, state the statistical hypotheses, and carry out an appropriate test to answer whether the drug is useful.
+
+## Present and discuss your results. Is this novel drug useful? What would you suggest doing next?
